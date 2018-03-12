@@ -64,6 +64,12 @@ public:
    */
   void UpdateEKF(const Eigen::VectorXd &z);
 
+  /**
+   * A common method for measurement update so we can use it in KF and EKF
+   * @param y Y vector after subtracting measurement and prediction
+   *
+   */
+  void MeasurementUpdate(const Eigen::VectorXd &y);
 };
 
 #endif /* KALMAN_FILTER_H_ */
