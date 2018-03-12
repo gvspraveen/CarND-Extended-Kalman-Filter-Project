@@ -45,28 +45,19 @@ FusionEKF::FusionEKF() {
   //setup KF state covariance matrix P
   MatrixXd P_ = MatrixXd(4, 4);
   P_ << 1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1000, 0,
-            0, 0, 0, 1000;
-
+        0, 1, 0, 0,
+        0, 0, 1000, 0,
+        0, 0, 0, 1000;
+  ekf_.P_ = P_;
 
   // Setup KF state transition function - F
   MatrixXd F_ = MatrixXd(4, 4);
   F_ << 1, 0, 1, 0,
-             0, 1, 0, 1,
-             0, 0, 1, 0,
-             0, 0, 0, 1;
+       0, 1, 0, 1,
+       0, 0, 1, 0,
+       0, 0, 0, 1;
+  ekf_.F_ = F_;
 
-  // covariance matrix based on noise vector
-  MatrixXd Q_ = MatrixXd(4, 4);
-  Q_ << 1, 0, 1, 0,
-        0, 1, 0, 1,
-        1, 0, 1, 0,
-        0, 1, 0, 1;
-
-  VectorXd x_ = VectorXd(4);
-  x_ << 1, 1, 1, 1;
-  ekf_.Init(x_, P_, F_, H_laser_, R_laser_, Q_);
 }
 
 
@@ -88,12 +79,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       * Create the covariance matrix.
       * Remember: you'll need to convert radar from polar to cartesian coordinates.
     */
-    // first measurement
-    cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-    ekf_.x_ << 1, 1, 1, 1;
 
-    // initialize position and velocity
    float px = 0.0;
    float py = 0.0;
    float vx = 0.0;
@@ -109,8 +96,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
       px = rho * cos(phi);
       py = rho * sin(phi);
-      vx = rho_dot * cos(phi);
-      vy = rho_dot * sin(phi);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
@@ -160,6 +145,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   float dt_2 = dt * dt;
   float dt_3 = dt_2 * dt;
   float dt_4 = dt_3 * dt;
+
   ekf_.Q_ = MatrixXd(4, 4);
   ekf_.Q_ <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
          0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,

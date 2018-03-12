@@ -49,13 +49,13 @@ void KalmanFilter::Update(const VectorXd &z) {
   P_ = (I - K * H_) * P_;
 }
 
+
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
   /**
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
   // Need to convert the state into polar coordinates
-
   float px = x_(0);
   float py = x_(1);
   float vx = x_(2);
@@ -65,30 +65,26 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   float phi = atan2(py, px);
   float rho_dot;
 
-  // Ensure that we are not dividing by zerio
-  if (rho > 0.0001 ) {
-      rho_dot = (px * vx + py * vy) / rho;
-  } else {
-      rho_dot = (px * vx + py * vy) / 0.0001;
-  }
+  // Ensure that we are not dividing by zero
+  float divide_by = (rho > 0.0001 ? rho: 0.0001);
+
+  rho_dot = (px * vx + py * vy) / divide_by;
+
   VectorXd z_pred(3);
   z_pred << rho, phi, rho_dot;
 
   VectorXd y = z - z_pred;
-  long measured_phi = y(1);
+
+  // As mentioned in the tips, normalize angle to make sure we are within -PI to PI
   long two_pi = 2 * M_PI;
-  long to_add = (measured_phi < 0 ? two_pi : -two_pi);
-
-  while (fabs(measured_phi) > M_PI) {
-    measured_phi += to_add;
+  long to_add = (y(1) < 0 ? two_pi : -two_pi);
+  while (fabs(y(1)) > M_PI) {
+    y(1) += to_add;
   }
-  y(1) = measured_phi;
 
-  MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
+  MatrixXd PHt = P_ * H_.transpose();
+  MatrixXd S = H_ * PHt + R_;
+  MatrixXd K = PHt * S.inverse();
 
   //new estimate
   x_ = x_ + (K * y);
